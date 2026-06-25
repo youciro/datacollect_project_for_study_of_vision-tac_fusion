@@ -38,18 +38,7 @@ TENSORBOARD_DIR = os.path.join(TRAIN_OUTPUT_ROOT, 'tensorboard')
 LOG_DIR = os.path.join(TRAIN_OUTPUT_ROOT, 'logs')
 
 
-# ============================================================ #
-#  物理量全局标准化配置
-# ============================================================ #
-ENABLE_PHYSICAL_FEATURE_NORMALIZATION = True  # 是否启用Pt/Pv标准化
-# 标准化统计量保存路径（自动关联训练集划分，避免不同划分用错统计量）
-import hashlib
-train_obj_str = '_'.join(sorted(config.TRAIN_OBJECTS))  # 训练物体列表转字符串
-train_obj_hash = hashlib.md5(train_obj_str.encode()).hexdigest()[:8]  # 哈希防冲突
-NORM_STATS_PATH = os.path.join(
-    TRAIN_OUTPUT_ROOT,
-    f'normalization_stats_seed{config.SPLIT_SEED}_{train_obj_hash}.npz'
-)
+
 
 # ============================================================ #
 #  数据集划分
@@ -81,6 +70,18 @@ TEST_OBJECTS = [
 VAL_RATIO = 0.2
 SPLIT_SEED = 42
 
+# ============================================================ #
+#  物理量全局标准化配置
+# ============================================================ #
+ENABLE_PHYSICAL_FEATURE_NORMALIZATION = True  # 是否启用Pt/Pv标准化
+# 标准化统计量保存路径（自动关联训练集划分，避免不同划分用错统计量）
+import hashlib
+train_obj_str = '_'.join(sorted(TRAIN_OBJECTS))  # 训练物体列表转字符串
+train_obj_hash = hashlib.md5(train_obj_str.encode()).hexdigest()[:8]  # 哈希防冲突
+NORM_STATS_PATH = os.path.join(
+    TRAIN_OUTPUT_ROOT,
+    f'normalization_stats_seed{SPLIT_SEED}_{train_obj_hash}.npz'
+)
 
 # ============================================================ #
 #  标签编码
