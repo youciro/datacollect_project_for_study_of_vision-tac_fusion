@@ -102,18 +102,23 @@ def plot_confusion_matrix(cm, class_names, save_path, title='Confusion Matrix'):
 
 def plot_roc(label_bins, success_probs, save_path):
     """画 ROC 曲线 (success vs failure 二分类)"""
-    # label_bin: 1=失败, 0=成功; success_prob 越接近 1 越成功
-    # 二分类问题: 把"失败"当 positive
-    fpr, tpr, _ = roc_curve(label_bins, 1.0 - success_probs)
+    # 核心修正：label_bins里1=成功（正类），0=失败（负类）
+    # success_probs是成功的概率，越高越可能是正类
+    y_true = label_bins  # 直接用原始标签，1就是我们要的正类
+    y_score = success_probs  # 正类（成功）的预测概率
+
+    # 显式指定pos_label=1，告诉sklearn“标签为1的是正类”，彻底避免歧义
+    fpr, tpr, _ = roc_curve(y_true, y_score, pos_label=1)
     roc_auc = auc(fpr, tpr)
-    
+
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.plot(fpr, tpr, lw=2, label=f'ROC (AUC = {roc_auc:.3f})')
     ax.plot([0, 1], [0, 1], 'k--', lw=1)
-    ax.set_xlim(0, 1); ax.set_ylim(0, 1.05)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.05)
     ax.set_xlabel('False Positive Rate')
     ax.set_ylabel('True Positive Rate')
-    ax.set_title('ROC: success vs failure')
+    ax.set_title('ROC: Success vs Failure')
     ax.legend(loc='lower right')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -157,7 +162,7 @@ def main():
     # 3. 加载模型
     print(f"[加载模型] {args.ckpt}")
     model = GraspFusionModel().to(device)
-    ckpt = torch.load(args.ckpt, map_location=device)
+    ckpt = torch.load(args.ckpt, map_location=device, weights_only=False)
     model.load_state_dict(ckpt['model_state'])
     print(f"  来自 epoch {ckpt.get('epoch', '?')}")
     
