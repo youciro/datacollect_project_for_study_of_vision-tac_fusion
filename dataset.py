@@ -77,8 +77,8 @@ def load_or_compute_norm_stats(cache, train_idx, norm_stats_path):
 
     # 否则用训练集计算统计量
     print(f"📊 计算训练集物理量标准化统计量（基于 {len(train_idx)} 个训练样本）...")
-    pt_train = cache['Pt'][train_idx]  # (n_train, 6)，仅训练集的触觉物理量
-    pv_train = cache['Pv'][train_idx]  # (n_train, 4)，仅训练集的视觉物理量
+    pt_train = cache['Pts'][train_idx]  # (n_train, 6)，仅训练集的触觉物理量
+    pv_train = cache['Pvs'][train_idx]  # (n_train, 4)，仅训练集的视觉物理量
 
     # 计算均值和标准差，给标准差加eps防止除零
     pt_mean = pt_train.mean(axis=0)
@@ -172,13 +172,16 @@ class GraspDataset(Dataset):
         else:
             self.color_jitter = None
 
+    def __len__(self):
+        return len(self.indices)
+
     def __getitem__(self, idx):
         i = self.indices[idx]
         c = self.cache
 
         rgbd = c['rgbds'][i].copy()
         tactile = c['tactile_aggs'][i].copy()
-        Pt = c['Pt'][i].copy()  # (6,) 原始触觉物理量
+        Pt = c['Pts'][i].copy()  # (6,) 原始触觉物理量
         Pv = c['Pvs'][i].copy()  # (4,) 原始视觉物理量
         label = int(c['labels'][i])
 
@@ -339,8 +342,10 @@ if __name__ == '__main__':
     if config.ENABLE_PHYSICAL_FEATURE_NORMALIZATION:
         print("\n[标准化验证] 训练集前10个样本标准化后统计量:")
         sample_pt, sample_pv = [], []
-        for i in range(min(10, len(train_set))):
-            batch = train_set[i]
+        # 从DataLoader里直接取对应的Dataset实例，已经实现了__len__和__getitem__
+        train_dataset = train_loader.dataset
+        for i in range(min(10, len(train_dataset))):
+            batch = train_dataset[i]
             sample_pt.append(batch['Pt'].numpy())
             sample_pv.append(batch['Pv'].numpy())
         sample_pt = np.stack(sample_pt)
